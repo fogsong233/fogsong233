@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+  <meta name="author" content="FogSong">
+
+
+  <meta name="subtitle" content="生命不息,睡觉不止">
+
+
+
+
+<title>使用Ollama部署本地大模型 | 「现实以下全集」</title>
+
+
+
+<link rel="icon" href="/favicon.png">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/nprogress/nprogress.css">
+
+
+
+<script src="/lib/jquery.min.js"></script>
+
+
+<script src="/lib/iconify-icon.min.js"></script>
+
+
+<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+  };
+</script>
+
+
+<script src="/lib/nprogress/nprogress.js"></script>
+
+<script>
+  $(document).ready(() => {
+    NProgress.configure({
+      showSpinner: false,
+    });
+    NProgress.start();
+    $("#nprogress .bar").css({
+      background: "#de7441",
+    });
+    $("#nprogress .peg").css({
+      "box-shadow": "0 0 2px #de7441, 0 0 4px #de7441",
+    });
+    $("#nprogress .spinner-icon").css({
+      "border-top-color": "#de7441",
+      "border-left-color": "#de7441",
+    });
+    setTimeout(function () {
+      NProgress.done();
+      $(".fade").removeClass("out");
+    }, 800);
+  });
+</script>
+
+<script>
+  (function () {
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const setting = localStorage.getItem("hexo-color-scheme") || "auto";
+    if (setting === "dark" || (prefersDark && setting !== "light"))
+      document.documentElement.classList.toggle("dark", true);
+    let isDark = document.documentElement.classList.contains("dark");
+  })();
+
+  $(document).ready(function () {
+    // init icon
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = document.documentElement.classList.contains("dark");
+    $("#theme-icon").attr("icon", isDark ? "ri:moon-line" : "ri:sun-line");
+
+    function toggleGiscusTheme() {
+      const isDark = document.documentElement.classList.contains("dark");
+      const giscusFrame = document.querySelector("iframe.giscus-frame");
+      if (giscusFrame) {
+        giscusFrame.contentWindow.postMessage(
+          {
+            giscus: {
+              setConfig: {
+                theme: isDark ? "dark" : "light",
+              },
+            },
+          },
+          "https://giscus.app"
+        );
+      }
+    }
+
+    // toggle dark mode
+    function toggleDark() {
+      let isDark = document.documentElement.classList.contains("dark");
+      const setting = localStorage.getItem("hexo-color-scheme") || "auto";
+      isDark = !isDark;
+      document.documentElement.classList.toggle("dark", isDark);
+      $("#theme-icon").attr("icon", isDark ? "ri:moon-line" : "ri:sun-line");
+      if (prefersDark === isDark) {
+        localStorage.setItem("hexo-color-scheme", "auto");
+      } else {
+        localStorage.setItem("hexo-color-scheme", isDark ? "dark" : "light");
+      }
+      toggleGiscusTheme();
+    }
+
+    // listen dark mode change
+    window
+      .matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", (e) => {
+        const setting = localStorage.getItem("hexo-color-scheme") || "auto";
+        if (setting === "auto") {
+          document.documentElement.classList.toggle("dark", e.matches);
+          $("#theme-icon").attr(
+            "icon",
+            e.matches ? "ri:moon-line" : "ri:sun-line"
+          );
+          toggleGiscusTheme();
+        }
+      });
+
+    $("#toggle-dark").click((event) => {
+      const isAppearanceTransition = document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (!isAppearanceTransition) {
+        toggleDark()
+        return
+      }
+      const x = event.clientX
+      const y = event.clientY
+      const endRadius = Math.hypot(
+        Math.max(x, innerWidth - x),
+        Math.max(y, innerHeight - y),
+      )
+      const transition = document.startViewTransition(async () => {
+        toggleDark()
+      })
+
+      transition.ready
+        .then(() => {
+          const isDark = document.documentElement.classList.contains("dark")
+          const clipPath = [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${endRadius}px at ${x}px ${y}px)`,
+          ]
+          document.documentElement.animate(
+            {
+              clipPath: isDark
+                ? [...clipPath].reverse()
+                : clipPath,
+            },
+            {
+              duration: 400,
+              easing: 'ease-out',
+              pseudoElement: isDark
+                ? '::view-transition-old(root)'
+                : '::view-transition-new(root)',
+            },
+          )
+        })
+    });
+  });
+</script>
+
+
+
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+<body class="font-sans bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-200 relative">
+  <header class="fixed w-full px-5 py-1 z-10 backdrop-blur-xl backdrop-saturate-150 border-b border-black/5">
+  <div class="max-auto">
+    <nav class="flex items-center text-base">
+      <a href="/" class="group">
+        <h2 class="font-medium tracking-tighterp text-l p-2">
+          <img class="w-5 mr-2 inline-block transition-transform group-hover:rotate-[30deg]" id="logo" src="/images/logo.svg" alt="「现实以下全集」" />
+          「现实以下全集」
+        </h2>
+      </a>
+      <div id="header-title" class="opacity-0 md:ml-2 md:mt-[0.1rem] text-xs font-medium whitespace-nowrap overflow-hidden overflow-ellipsis">
+        使用Ollama部署本地大模型
+      </div>
+      <div class="flex-1"></div>
+      <div class="flex items-center gap-3">
+        
+          <a class="hidden sm:flex" href="/archives">Posts</a>
+        
+        
+          
+            <a class="w-5 h-5 hidden sm:flex" title="Github" target="_blank" rel="noopener" href="https://github.com/fogsong233">
+              <iconify-icon width="20" icon="ri:github-line"></iconify-icon>
+            </a>
+          
+        
+        <a class="w-5 h-5 hidden sm:flex" title="Github" href="rss2.xml">
+          <iconify-icon width="20" icon="ri:rss-line"></iconify-icon>
+        </a>
+        <a class="w-5 h-5" title="toggle theme" id="toggle-dark">
+          <iconify-icon width="20" icon="" id="theme-icon"></iconify-icon>
+        </a>
+      </div>
+      <div class="flex items-center justify-center gap-3 ml-3 sm:hidden">
+        <span class="w-5 h-5" aria-hidden="true" role="img" id="open-menu">
+          <iconify-icon width="20" icon="carbon:menu" ></iconify-icon>
+        </span>
+        <span class="w-5 h-5 hidden" aria-hidden="true" role="img" id="close-menu">
+          <iconify-icon  width="20" icon="carbon:close" ></iconify-icon>
+        </span>
+      </div>
+    </nav>
+  </div>
+</header>
+<div id="menu-panel" class="h-0 overflow-hidden sm:hidden fixed left-0 right-0 top-12 bottom-0 z-10">
+  <div id="menu-content" class="relative z-20 bg-white/80 px-6 sm:px-8 py-2 backdrop-blur-xl -translate-y-full transition-transform duration-300">
+    <ul class="nav flex flex-col sm:flex-row text-sm font-medium">
+      
+        <li class="nav-portfolio sm:mx-2 border-b sm:border-0 border-black/5 last:border-0 hover:text-main">
+          <a href="/archives" class="flex h-12 sm:h-auto items-center">Posts</a>
+        </li>
+      
+    </ul>
+  </div>
+  <div class="mask bg-black/20 absolute inset-0"></div>
+</div>
+
+  <main class="pt-14">
+    <!-- css -->
+
+<link rel="stylesheet" href="/lib/fancybox/fancybox.min.css">
+
+
+<link rel="stylesheet" href="/lib/tocbot/tocbot.min.css">
+
+<!-- toc -->
+
+  <!-- tocbot -->
+<nav class="post-toc toc text-sm w-48 relative top-32 right-0 opacity-70 hidden lg:block" style="position: fixed !important;"></nav>
+
+
+<section class="px-6 max-w-prose mx-auto md:px-0">
+  <!-- header -->
+  <header class="overflow-hidden pt-6 pb-6 md:pt-12">
+    <div class="pt-4 md:pt-6">
+      <h1 id="article-title" class="text-[2rem] font-bold leading-snug mb-4 md:mb-6 md:text-[2.6rem]">
+        使用Ollama部署本地大模型
+      </h1>
+      <div>
+        <section class="flex items-center gap-3 text-sm">
+          <span class="flex items-center gap-1">
+            <iconify-icon width="18" icon="carbon-calendar" ></iconify-icon>
+            <time>2024-12-05</time>
+          </span>
+          <span class="text-gray-400">·</span>
+          <span class="flex items-center gap-1">
+            <iconify-icon width="18" icon="ic:round-access-alarm" ></iconify-icon>
+            <span>3 min</span>
+          </span>
+          <span class="text-gray-400">·</span>
+          <span class="flex items-center gap-1">
+            <iconify-icon width="18" icon="icon-park-outline:font-search" ></iconify-icon>
+            <span>1k words</span>
+          </span>
+          
+            <span class="text-gray-400">·</span>
+            <span class="flex items-center gap-1">
+              <iconify-icon width="16" icon="icon-park-outline:box" class="mr-2"></iconify-icon>
+              <a class="article-category-link" href="/categories/Tech/">Tech</a>
+            </span>
+          
+        </section>
+      </div>
+    </div>
+  </header>
+  <!-- content -->
+  <article class="post-content prose m-auto slide-enter-content dark:prose-invert">
+    <p>在AI逐渐火热的今天，没有一个属于自己的本地大模型怎么行呢，今天来教你使用Ollma快速搭建一个利用本地算力的聊天网站，支持多种本地模型，效果如图:</p>
+<p><img src="https://raw.githubusercontent.com/fogsong233/imgbed/main/2024/12/05-22-43-28-2024-12-05-22-42-04-image.png"></p>
+<h3 id="硬件要求"><a href="#硬件要求" class="headerlink" title="硬件要求"></a>硬件要求</h3><p>作者的电脑是Windows 11，显卡是RTX 4060，推荐有显卡的电脑安装，如果你的显卡内存少于16gb，建议使用参数在7B左右的模型，不然对话会生成的很慢。同时你需要保证你有能访问Github等网站的环境。</p>
+<h3 id="安装Ollama"><a href="#安装Ollama" class="headerlink" title="安装Ollama"></a>安装Ollama</h3><blockquote>
+<p>什么是OIlama?  </p>
+</blockquote>
+<img src="/2024/12/05/使用docker-ollma部署本地大模型/"  title="" alt="" data-align="center">
+
+<p>一个羊驼为logo的软件，它拥有一个集成了各种常见开源大模型的网络库，通过这个软件你可以很方便的下载模型并配置一些基础设置，本文我们直接使用它下载下来的模型就好了。</p>
+<p>打开Ollama官网，<a target="_blank" rel="noopener" href="https://ollama.com/download">Download Ollama</a>，下载对应的系统程序（这里以Windows为例子），双击下载下来的OllamaSetup.exe，进行安装。</p>
+<blockquote>
+<p>注意，在windows下安装时，是不允许选择安装位置的，默认是安装在系统盘的。 </p>
+</blockquote>
+<p>安装完毕后，打开终端进行验证，在终端中输入<code>ollama</code>。</p>
+<p>如果看到以下信息则说明安装成功</p>
+<p><img src="https://raw.githubusercontent.com/fogsong233/imgbed/main/2024/12/05-22-56-50-2024-12-05-22-56-42-image.png"></p>
+<h4 id="设置模型安装位置"><a href="#设置模型安装位置" class="headerlink" title="设置模型安装位置"></a>设置模型安装位置</h4><p>因为模型动辄几十GB，所以最好把模型放到D盘或者E盘，不然你的C盘会迅速爆红。这需要你创建一个储存目录(如下面代码里的<code>D:\ollama_models</code>，然后设置Windows终端的环境变量。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">只设置当前用户（需要先创建D:\ollama_models目录）</span></span><br><span class="line">setx OLLAMA_MODELS &quot;D:\ollama_models&quot; </span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">为所有用户设置（需要先创建D:\ollama_models目录）</span></span><br><span class="line">setx OLLAMA_MODELS &quot;D:\ollama_models&quot; /M</span><br></pre></td></tr></table></figure>
+
+<p>之后重启这个终端和Ollama服务就好了。</p>
+<h3 id="Ollama的模型"><a href="#Ollama的模型" class="headerlink" title="Ollama的模型"></a>Ollama的模型</h3><p>可以通过以下网址查看Ollama支持的模型列表：  <a target="_blank" rel="noopener" href="https://ollama.com/library">Ollama Library</a></p>
+<p><img src="https://raw.githubusercontent.com/fogsong233/imgbed/main/2024/12/05-23-03-04-2024-12-05-23-02-58-image.png"></p>
+<p>现在我们不需要安装，因为Ollama是个命令行程序，它提供了一个后端，但是我们想要想ChatGPT或是Kimi一样聊天的话，我们需要一个网页前端。</p>
+<h3 id="部署网页前端"><a href="#部署网页前端" class="headerlink" title="部署网页前端"></a>部署网页前端</h3><p>我们使用<a target="_blank" rel="noopener" href="https://github.com/open-webui/open-webui">Open Web UI</a>这个开源AI聊天前端，这需要你安装Python（什么？你没有安装Python？）。确保你有Python的包管理工具<code>Pip</code>，输入：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install open-webui</span><br></pre></td></tr></table></figure>
+
+<p>这样你就成功安装了！接着输入<code>open-webui serve</code>启动前端，它会输出一个网址（应该是 <a target="_blank" rel="noopener" href="http://localhost:8080/">http://localhost:8080</a> ）。访问如果出现页面，你就成功启动啦！</p>
+<h3 id="配置你的模型"><a href="#配置你的模型" class="headerlink" title="配置你的模型"></a>配置你的模型</h3><p>首先确保你的Ollama在后台运行，在命令行中输入<code>ollama serve</code>，他会返回你一个网址，（大概是127.0.0.1:11434)，这是所有模型运行的后端的访问地址，我们需要把他关联到前端去。</p>
+<p>访问Open WebUI，找到管理员设置，找到模型</p>
+<p><img src="https://raw.githubusercontent.com/fogsong233/imgbed/main/2024/12/05-23-14-49-2024-12-05-23-14-44-image.png"></p>
+<p>在<code>管理Ollama模型</code>这个选项里找到Ollama返回的网址(或者是输入)。然后再访问Ollama Library找到你想要的模型，输入<code>模型名:参数</code>（比如<code>qwen:7B</code>）。然后点击右边的下载按钮。等待自动下载，你也可以下载多个模型，下载完后返回主页，可以自主切换模型。</p>
+<p><img src="https://raw.githubusercontent.com/fogsong233/imgbed/main/2024/12/05-23-18-51-2024-12-05-23-18-44-image.png"></p>
+<p>之后就可以开始聊天啦！</p>
+<h3 id="更多操作"><a href="#更多操作" class="headerlink" title="更多操作"></a>更多操作</h3><h4 id="自定义系统提示词"><a href="#自定义系统提示词" class="headerlink" title="自定义系统提示词"></a>自定义系统提示词</h4><p>想要让你的AI更加智能？你可以配置预设的提示词，点击右上角的配置小图标打开对话高级设置，你可以输入系统提示词，帮助更好的分析的你的问题。</p>
+<p><img src="https://raw.githubusercontent.com/fogsong233/imgbed/main/2024/12/05-23-21-25-2024-12-05-23-21-21-image.png"></p>
+<p>比如这个开源项目<a target="_blank" rel="noopener" href="https://github.com/bklieger-groq/g1">GitHub - bklieger-groq&#x2F;g1</a> 就可以实现类似ChatGPT o1思维链的效果。</p>
+<h4 id="使用记忆或者角色扮演"><a href="#使用记忆或者角色扮演" class="headerlink" title="使用记忆或者角色扮演"></a>使用记忆或者角色扮演</h4><p><img src="https://raw.githubusercontent.com/fogsong233/imgbed/main/2024/12/05-23-26-39-2024-12-05-23-26-35-image.png"></p>
+<p>在管理员设置里，你可以设置记忆为大模型输入预设预料，也可以点击头像，找到AI对话游乐场，为你的AI添加角色预设！</p>
+<p><img src="https://raw.githubusercontent.com/fogsong233/imgbed/main/2024/12/05-23-28-49-2024-12-05-23-28-46-image.png"></p>
+<h4 id="更多设置"><a href="#更多设置" class="headerlink" title="更多设置"></a>更多设置</h4><p>访问Open Web UI或Ollama官网来获取更多自定义设置，或者你可以访问<a href="%5Bhttps://huggingface.co/%5D(https://huggingface.co/)">Hugging Face</a>，探索更多大模型的世界！</p>
+
+  </article>
+  <!-- tag -->
+  <div class="mt-12 pt-6 border-t border-gray-200">
+    
+      
+        <span class="bg-gray-100 dark:bg-gray-700 px-2 py-1 m-1 text-sm rounded-md transition-colors hover:bg-gray-200">
+          <a href="/tags/AI/">AI</a>
+        </span>
+      
+    
+  </div>
+  <!-- prev and next -->
+  <div class="flex justify-between mt-12 pt-6 border-t border-gray-200">
+    <div>
+      
+    </div>
+    <div>
+      
+        <a href="/2024/11/24/hello-world/" class="text-sm text-gray-400 hover:text-gray-500 flex justify-center">
+          Hello World
+          <iconify-icon width="20" icon="ri:arrow-right-s-line" data-inline="false"></iconify-icon>
+        </a>
+      
+    </div>
+  </div>
+  <!-- comment -->
+  <div class="article-comments mt-12">
+    
+
+  </div>
+</section>
+<!-- js inspect -->
+
+<script src="/lib/clipboard.min.js"></script>
+
+
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": {
+        preferredFont: "TeX",
+        availableFonts: ["STIX","TeX"],
+        linebreaks: { automatic:true },
+        EqnChunk: (MathJax.Hub.Browser.isMobile ? 10 : 50)
+    },
+    tex2jax: {
+        inlineMath: [ ["$", "$"], ["\\(","\\)"] ],
+        processEscapes: true,
+        ignoreClass: "tex2jax_ignore|dno",
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    },
+    TeX: {
+        equationNumbers: { autoNumber: "AMS" },
+        noUndefined: { attributes: { mathcolor: "red", mathbackground: "#FFEEEE", mathsize: "90%" } },
+        Macros: { href: "{}" }
+    },
+    messageStyle: "none"
+  });
+</script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+      var all = MathJax.Hub.getAllJax(), i;
+      for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+      }
+  });
+</script>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>
+  $(document).ready(() => {
+    const maraidConfig = {
+      theme: "default",
+      logLevel: 3,
+      flowchart: { curve: "linear" },
+      gantt: { axisFormat: "%m/%d/%Y" },
+      sequence: { actorMargin: 50 },
+    };
+    mermaid.initialize(maraidConfig);
+  });
+</script>
+
+
+
+<script src="/lib/fancybox/fancybox.umd.min.js"></script>
+
+<script>
+  $(document).ready(() => {
+    $('.post-content').each(function(i){
+      $(this).find('img').each(function(){
+        if ($(this).parent().hasClass('fancybox') || $(this).parent().is('a')) return;
+        var alt = this.alt;
+        if (alt) $(this).after('<span class="fancybox-alt">' + alt + '</span>');
+        $(this).wrap('<a class="fancybox-img" href="' + this.src + '" data-fancybox=\"gallery\" data-caption="' + alt + '"></a>')
+      });
+      $(this).find('.fancybox').each(function(){
+        $(this).attr('rel', 'article' + i);
+      });
+    });
+
+    Fancybox.bind('[data-fancybox="gallery"]', {
+        // options
+    })
+  })
+</script>
+
+<!-- tocbot begin -->
+
+<script src="/lib/tocbot/tocbot.min.js"></script>
+
+<script>
+  $(document).ready(() => {
+      tocbot.init({
+        // Where to render the table of contents.
+        tocSelector: '.post-toc',
+        // Where to grab the headings to build the table of contents.
+        contentSelector: '.post-content',
+        // Which headings to grab inside of the contentSelector element.
+        headingSelector: 'h1, h2, h3',
+        // For headings inside relative or absolute positioned containers within content.
+        hasInnerContainers: true,
+    });
+  })
+</script>
+<!-- tocbot end -->
+
+
+  </main>
+  <footer class="flex flex-col h-40 items-center justify-center text-gray-400 text-sm">
+    <!-- busuanzi -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <!-- Busuanzi Analytics -->
+    <!-- <div class="flex items-center gap-2">
+  <span>Visitors</span>
+  <span id="busuanzi_value_site_uv"></span>
+  <span>Page Views</span>
+  <span id="busuanzi_value_site_pv"></span>
+</div> -->
+    <!-- End Busuanzi Analytics -->
+    
+        <!-- copyright -->
+        <div class="flex items-center gap-2">
+            <a target="_blank" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" style="color: inherit;">CC
+                BY-NC-SA 4.0</a>
+            <span>© 2024 - </span>
+            <iconify-icon width="18" icon="emojione-monotone:maple-leaf"></iconify-icon>
+            <a href="https://github.com/xbmlz" target="_blank" rel="noopener noreferrer">fogsong233</a>
+        </div>
+        <!-- powered by -->
+        <div class="flex items-center gap-2">
+            <span>Powered by</span>
+            <a href="https://hexo.io/" target="_blank" rel="noopener noreferrer">Hexo</a>
+            <span>&</span>
+            <a href="https://github.com/xbmlz/hexo-theme-maple" target="_blank" rel="noopener noreferrer">Maple</a>
+        </div>
+
+</footer>
+  <div class="back-to-top box-border fixed right-6 z-1024 -bottom-20 rounded py-1 px-1 bg-slate-900 opacity-60 text-white cursor-pointer text-center dark:bg-slate-600">
+    <span class="flex justify-center items-center text-sm">
+      <iconify-icon width="18" icon="ion:arrow-up-c" id="go-top"></iconify-icon>
+      <span id="scrollpercent"><span>0</span> %</span>
+    </span>
+  </div>
+  
+<script src="/js/main.js"></script>
+
+
+  <script>
+    $(document).ready(function () {
+      const mapleCount = "10";
+      const speed = "0.5";
+      const mapleEl = document.getElementById("maple");
+      const maples = Array.from({ length: mapleCount }).map(() => {
+        const maple = document.createElement("div");
+        const scale = Math.random() * 0.5 + 0.5;
+        const offset = Math.random() * 2 - 1;
+        const x = Math.random() * mapleEl.clientWidth;
+        const y = -Math.random() * mapleEl.clientHeight;
+        const duration = 10 / speed;
+        const delay = -duration;
+        maple.className = "maple";
+        maple.style.width = `${24 * scale}px`;
+        maple.style.height = `${24 * scale}px`;
+        maple.style.left = `${x}px`;
+        maple.style.top = `${y}px`;
+        maple.style.setProperty("--maple-fall-offset", offset);
+        maple.style.setProperty("--maple-fall-height", `${Math.abs(y) + mapleEl.clientHeight}px`);
+        maple.style.animation = `fall ${duration}s linear infinite`;
+        maple.style.animationDelay = `${delay}s`;
+        mapleEl.appendChild(maple)
+        return maple
+      })
+    });
+  </script>
+  
+
+
+  <div class="fixed top-0 bottom-0 left-0 right-0 pointer-events-none print:hidden" id="maple"></div>
+</body>
+
+</html>
