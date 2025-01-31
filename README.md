@@ -8,5 +8,5 @@
 ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)   
 
-<img align="center" src="https://github-readme-stats.vercel.app/api?username=fogsong233&show_icons=true" />
+<img align="center" src="https://github-readme-stats.vercel.app/api?username=fogsong233&show_icons=true" width="10em"/>
 <img align="center" src="https://github-readme-stats.vercel.app/api/top-langs/?username=fogsong233&layout=compact" />
