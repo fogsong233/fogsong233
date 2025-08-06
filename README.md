@@ -11,6 +11,6 @@
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)   
 
 <p>
-  <img src="https://github-readme-stats.vercel.app/api?username=fogsong233&theme=radical"/>
-    <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=fogsong233&layout=compact&theme=radical" />
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=fogsong233&layout=compact&theme=radical" width="300" />
+  <img src="https://github-readme-stats.vercel.app/api?username=fogsong233&theme=radical" width="380" />
 </p>
