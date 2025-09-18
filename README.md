@@ -1,4 +1,4 @@
-### Interesting & Learning:
+### Interesting & Learning
 
  #### Compiler | Type Theory | Category Theory | Programming Languages | Linguistics | HPC
  
