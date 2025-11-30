@@ -11,9 +11,10 @@
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)   
 
 <p>
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=fogsong233&layout=compact&theme=radical" width="300" />
-  <!-- <img src=<img width="1743" height="733" alt="image" src="https://github.com/user-attachments/assets/d0d7ed97-75a8-4ef4-8843-8aba8e5d170f" /> -->
-<!-- " width="380" /> -->
+  <img src="https://raw.githubusercontent.com/fogsong233/github-stats-transparent/refs/heads/output/generated/overview.svg" />
+ <img src="https://raw.githubusercontent.com/fogsong233/github-stats-transparent/refs/heads/output/generated/languages.svg"/>
 </p>
 
-- Find me in [Zhihu](https://www.zhihu.com/people/bank-1-11)
+
+### Contact Me
+- [Zhihu](https://www.zhihu.com/people/bank-1-11)
